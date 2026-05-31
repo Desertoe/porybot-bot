@@ -1,0 +1,3 @@
+EQUIPOS_CUSTOM = [
+    "Rillaboom||assaultvest|grassysurge|grassyglide,knockoff,fakeout,highhorsepower|Adamant|252,252,,,4,|||||,,,,,Grass]Rotom-Heat||sitrusberry|levitate|overheat,voltswitch,willowisp,protect|Modest|252,,,100,,156||,0,,,,|||,,,,,Electric]Goodra||leftovers|gooey|dracometeor,fireblast,thunderbolt,protect|Modest|252,,,252,4,||,0,,,,|||,,,,,Dragon]Greninja||lifeorb|protean|hydropump,darkpulse,watershuriken,uturn|Timid|4,,,252,,252|||||,,,,,Water]Scizor||choiceband|technician|bulletpunch,uturn,quickattack|Adamant|252,252,,,4,|||||,,,,,Bug]Quagsire||rockyhelmet|unaware|earthquake,recover,toxic|Bold|252,,252,,4,|||||,,,,,Water"
+]
