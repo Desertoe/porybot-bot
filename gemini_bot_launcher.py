@@ -37,7 +37,7 @@ BOT_USERNAME = os.getenv("SHOWDOWN_USERNAME", "StockfishVGC")
 BOT_PASSWORD = os.getenv("SHOWDOWN_PASSWORD", "")
 
 # Segundos máximos esperando que el usuario acepte la challenge
-TIMEOUT_CHALLENGE = 30
+TIMEOUT_CHALLENGE = 90
 # Minutos máximos en combate antes de reiniciar el bot
 TIMEOUT_COMBATE_MIN = 15
 
@@ -116,23 +116,27 @@ async def main():
                                             bot.send_challenges(nick, 1),
                                             timeout=TIMEOUT_CHALLENGE
                                         )
-                                        print(f"[Launcher] ✓ Challenge completada para {nick}")
+                                        print(f"[Launcher] ✓ Combate con {nick} finalizado")
                                     except asyncio.TimeoutError:
-                                        print(f"[Launcher] ⏱ Timeout — {nick} no aceptó en {TIMEOUT_CHALLENGE}s, bot liberado")
+                                        print(f"[Launcher] ⏱ {nick} no aceptó en {TIMEOUT_CHALLENGE}s — reiniciando bot...")
+                                        raise Exception("Challenge timeout")
 
                                     ultimo_combate["en_combate"] = False
                                     ultimo_combate["tiempo"] = time.time()
 
                             except Exception as e:
+                                if "Challenge timeout" in str(e):
+                                    raise
                                 print(f"[Launcher] Error procesando mensaje: {e}")
                                 ultimo_combate["en_combate"] = False
 
                 except Exception as e:
+                    if "Challenge timeout" in str(e):
+                        raise
                     print(f"[Launcher] Backend WS desconectado: {e}. Reconectando en 5s...")
                     await asyncio.sleep(5)
 
         async def watchdog():
-            """Reinicia el bot si lleva más de TIMEOUT_COMBATE_MIN en un combate."""
             while True:
                 await asyncio.sleep(60)
                 if ultimo_combate["en_combate"]:
