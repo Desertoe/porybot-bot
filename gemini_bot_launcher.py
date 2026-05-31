@@ -1,5 +1,5 @@
 """
-PoryBot — Launcher unificado del bot VGC con watchdog
+PoryBot — Launcher unificado del bot VGC con watchdog y timeout
 """
 import asyncio
 import os
@@ -35,6 +35,11 @@ SYSTEM_PROMPT_POR_FORMATO = {
 FORMATO_DEFAULT = "gen9vgc2026regf"
 BOT_USERNAME = os.getenv("SHOWDOWN_USERNAME", "StockfishVGC")
 BOT_PASSWORD = os.getenv("SHOWDOWN_PASSWORD", "")
+
+# Segundos máximos esperando que el usuario acepte la challenge
+TIMEOUT_CHALLENGE = 30
+# Minutos máximos en combate antes de reiniciar el bot
+TIMEOUT_COMBATE_MIN = 15
 
 ultimo_combate = {"tiempo": time.time(), "en_combate": False}
 
@@ -83,10 +88,10 @@ async def main():
                             try:
                                 data = json.loads(mensaje)
                                 if data.get("type") == "start_battle":
-                                    nick      = data.get("nick")
-                                    reg       = data.get("regulation", "regf")
-                                    paste     = data.get("paste")
-                                    formato   = FORMATO_POR_ARG.get(reg, FORMATO_DEFAULT)
+                                    nick    = data.get("nick")
+                                    reg     = data.get("regulation", "regf")
+                                    paste   = data.get("paste")
+                                    formato = FORMATO_POR_ARG.get(reg, FORMATO_DEFAULT)
 
                                     if formato != formato_actual:
                                         print(f"[Launcher] Cambiando regulación: {formato_actual} → {formato}")
@@ -105,7 +110,16 @@ async def main():
                                     ultimo_combate["tiempo"] = time.time()
                                     ultimo_combate["en_combate"] = True
                                     print(f"[Launcher] Desafiando a {nick} en formato {formato}")
-                                    await bot.send_challenges(nick, 1)
+
+                                    try:
+                                        await asyncio.wait_for(
+                                            bot.send_challenges(nick, 1),
+                                            timeout=TIMEOUT_CHALLENGE
+                                        )
+                                        print(f"[Launcher] ✓ Challenge completada para {nick}")
+                                    except asyncio.TimeoutError:
+                                        print(f"[Launcher] ⏱ Timeout — {nick} no aceptó en {TIMEOUT_CHALLENGE}s, bot liberado")
+
                                     ultimo_combate["en_combate"] = False
                                     ultimo_combate["tiempo"] = time.time()
 
@@ -118,16 +132,18 @@ async def main():
                     await asyncio.sleep(5)
 
         async def watchdog():
-            """Reinicia el bot si lleva más de 10 min en un combate sin terminar."""
+            """Reinicia el bot si lleva más de TIMEOUT_COMBATE_MIN en un combate."""
             while True:
                 await asyncio.sleep(60)
                 if ultimo_combate["en_combate"]:
                     minutos = (time.time() - ultimo_combate["tiempo"]) / 60
-                    if minutos > 10:
+                    if minutos > TIMEOUT_COMBATE_MIN:
                         print(f"[Watchdog] ⚠️ Bot colgado {minutos:.0f} min — reiniciando...")
                         raise Exception("Watchdog timeout")
+                    else:
+                        print(f"[Watchdog] Combate en curso — {minutos:.1f} min")
                 else:
-                    print(f"[Watchdog] Bot OK — en espera")
+                    print(f"[Watchdog] Bot OK — esperando combates")
 
         try:
             await asyncio.gather(
