@@ -2252,7 +2252,7 @@ class GeminiVGCBot(Player):
             resultado_bd = "win" if battle.won else "loss"
             async with aiohttp.ClientSession() as session:
                 await session.post(
-                    'http://localhost:3000/api/battles/finish-by-tag',
+                    f"{os.getenv('BACKEND_URL', 'http://localhost:3000')}/api/battles/finish-by-tag",
                     json={'battleTag': battle.battle_tag, 'result': resultado_bd},
                     headers={'X-Bot-Key': os.getenv('JWT_SECRET', 'porybot_super_secret_key_changeme_in_production')}
                 )
@@ -2621,7 +2621,7 @@ RAZONAMIENTO: [una frase]"""
                 user_nick = battle.opponent_username
                 async with aiohttp.ClientSession() as session:
                     await session.post(
-                    'http://localhost:3000/api/battles/notify-started',
+                    f"{os.getenv('BACKEND_URL', 'http://localhost:3000')}/api/battles/notify-started",
                     json={'userNick': user_nick, 'battleTag': battle.battle_tag},
                     headers={'X-Bot-Key': os.getenv('JWT_SECRET', 'porybot_super_secret_key_changeme_in_production')}
                     )
@@ -2682,7 +2682,7 @@ RAZONAMIENTO: [una frase]"""
                         log_events = [' | '.join(e[1:]) for e in obs.events if len(e) > 1]
                 async with aiohttp.ClientSession() as session:
                     await session.post(
-                        f'http://localhost:3000/api/battles/turn-by-tag',
+                        f"{os.getenv('BACKEND_URL', 'http://localhost:3000')}/api/battles/turn-by-tag",
                         json={
                             'battleTag': battle.battle_tag,
                             'turnNum': battle.turn,

@@ -43,8 +43,8 @@ SYSTEM_PROMPT_POR_FORMATO = {
 # Formato por defecto al arrancar
 FORMATO_DEFAULT = "gen9vgc2026regf"
 
-BOT_USERNAME = "StockfishVGC"
-BOT_PASSWORD = "Carlos12102003._"
+BOT_USERNAME = os.getenv("SHOWDOWN_USERNAME", "StockfishVGC")
+BOT_PASSWORD = os.getenv("SHOWDOWN_PASSWORD", "")
 
 
 def crear_bot(formato: str) -> GeminiVGCBot:
