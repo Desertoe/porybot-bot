@@ -1,11 +1,12 @@
 """
-PoryBot — Launcher unificado del bot VGC con watchdog y timeout
+PoryBot — Launcher unificado del bot VGC con watchdog, timeout y health server
 """
 import asyncio
 import os
 import json
 import time
 import websockets
+from aiohttp import web
 from dotenv import load_dotenv
 from poke_env import AccountConfiguration, ShowdownServerConfiguration
 from poke_env.teambuilder.constant_teambuilder import ConstantTeambuilder
@@ -36,9 +37,7 @@ FORMATO_DEFAULT = "gen9vgc2026regf"
 BOT_USERNAME = os.getenv("SHOWDOWN_USERNAME", "StockfishVGC")
 BOT_PASSWORD = os.getenv("SHOWDOWN_PASSWORD", "")
 
-# Segundos máximos esperando que el usuario acepte la challenge
 TIMEOUT_CHALLENGE = 90
-# Minutos máximos en combate antes de reiniciar el bot
 TIMEOUT_COMBATE_MIN = 15
 
 ultimo_combate = {"tiempo": time.time(), "en_combate": False}
@@ -63,10 +62,31 @@ def crear_bot(formato: str) -> GeminiVGCBot:
     )
 
 
+async def start_health_server():
+    """Servidor HTTP mínimo para que Render no mate el servicio."""
+    async def health(request):
+        n = len(ultimo_combate)
+        estado = "en combate" if ultimo_combate["en_combate"] else "esperando"
+        return web.Response(text=f"PoryBot StockfishVGC — {estado}")
+
+    app = web.Application()
+    app.router.add_get("/", health)
+    app.router.add_get("/health", health)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.getenv("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    print(f"[Health] Servidor HTTP activo en puerto {port}")
+
+
 async def main():
     backend_url = os.getenv("BACKEND_WS_URL", "ws://localhost:3000/ws")
     bot_key = os.getenv("JWT_SECRET", "porybot_super_secret_key_changeme_in_production")
     ws_url = f"{backend_url}?bot_key={bot_key}"
+
+    # Arrancar health server una sola vez
+    await start_health_server()
 
     while True:
         print(f"[Launcher] Arrancando bot...")
