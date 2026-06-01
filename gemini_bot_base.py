@@ -2090,7 +2090,12 @@ class GeminiVGCBot(Player):
         try:
             await super()._handle_battle_message(split_messages)
         except KeyError as e:
-            print(f"  [poke-env KeyError ignorado: {e} — forma desconocida, Mega de Champions no en Pokédex Gen9]")
+            print(f"  [poke-env KeyError ignorado: {e}]")
+        except Exception as e:
+            if "ShowdownException" in type(e).__name__:
+                print(f"  [ShowdownException ignorada — combate huérfano]")
+            else:
+                raise
 
     async def _handle_battle_message_safe(self, split_messages):
         """Wrapper seguro que ignora errores de Pokémon desconocidos (ej: Megas de Champions)."""
@@ -2114,10 +2119,17 @@ class GeminiVGCBot(Player):
             self._format = formato_base
             try:
                 battle = await super()._create_battle(split_message)
+            except Exception as e:
+                print(f"  [_create_battle ignorado: {e}]")
+                return None
             finally:
                 self._format = formato_original
             return battle
-        return await super()._create_battle(split_message)
+            try:
+                return await super()._create_battle(split_message)
+            except Exception as e:
+                print(f"  [_create_battle ignorado: {e}]")
+                return None
 
     async def _handle_battle_request(self, battle, maybe_default_order=False):
         if battle.teampreview and "customgame" in battle.battle_tag.lower():
