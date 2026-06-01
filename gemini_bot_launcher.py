@@ -128,18 +128,28 @@ async def main():
                                     ultimo_combate["en_combate"] = True
                                     print(f"[Launcher] Desafiando a {nick} en formato {formato}")
 
-                                    # Sin timeout — el watchdog maneja los colgados
-                                    await bot.send_challenges(nick, 1)
-                                    print(f"[Launcher] ✓ Combate con {nick} finalizado")
+                                    try:
+                                        await bot.send_challenges(nick, 1)
+                                        print(f"[Launcher] ✓ Combate con {nick} finalizado")
+                                    except Exception as e:
+                                        if "EQUIPO_RECHAZADO" in str(e):
+                                            print(f"[Launcher] Equipo rechazado — reiniciando bot")
+                                            ultimo_combate["en_combate"] = False
+                                            raise Exception("Equipo rechazado — reiniciando")
+                                        raise
 
                                     ultimo_combate["en_combate"] = False
                                     ultimo_combate["tiempo"] = time.time()
 
                             except Exception as e:
+                                if "reiniciando" in str(e):
+                                    raise
                                 print(f"[Launcher] Error procesando mensaje: {e}")
                                 ultimo_combate["en_combate"] = False
 
                 except Exception as e:
+                    if "reiniciando" in str(e):
+                        raise
                     print(f"[Launcher] Backend WS desconectado: {e}. Reconectando en 5s...")
                     await asyncio.sleep(5)
 

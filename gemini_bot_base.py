@@ -2054,6 +2054,14 @@ class GeminiVGCBot(Player):
                     await self._challenge_queue.put(challenging_player)
 
     async def _handle_battle_message(self, split_messages):
+        # Detectar popup de equipo rechazado para liberar el bot
+        for split_message in split_messages:
+            if len(split_message) > 1 and split_message[1] == "popup":
+                mensaje_popup = "|".join(split_message[2:]) if len(split_message) > 2 else ""
+                if "team was rejected" in mensaje_popup.lower():
+                    print(f"[Bot] Equipo rechazado por Showdown: {mensaje_popup[:80]}")
+                    raise Exception(f"EQUIPO_RECHAZADO: {mensaje_popup[:80]}")
+
         # Interceptar showteam del rival en custom game y parsear directamente
         for split_message in split_messages:
             if len(split_message) > 3 and split_message[1] == "showteam":
