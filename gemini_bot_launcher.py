@@ -37,8 +37,6 @@ FORMATO_DEFAULT = "gen9vgc2026regf"
 BOT_USERNAME = os.getenv("SHOWDOWN_USERNAME", "StockfishVGC")
 BOT_PASSWORD = os.getenv("SHOWDOWN_PASSWORD", "")
 
-# Segundos esperando que el usuario acepte la challenge
-TIMEOUT_ACEPTACION = 120
 # Minutos máximos en combate antes de reiniciar el bot
 TIMEOUT_COMBATE_MIN = 30
 
@@ -130,32 +128,23 @@ async def main():
                                     ultimo_combate["en_combate"] = True
                                     print(f"[Launcher] Desafiando a {nick} en formato {formato}")
 
-                                    try:
-                                        await asyncio.wait_for(
-                                            bot.send_challenges(nick, 1),
-                                            timeout=TIMEOUT_ACEPTACION
-                                        )
-                                        print(f"[Launcher] ✓ Combate con {nick} finalizado")
-                                    except asyncio.TimeoutError:
-                                        print(f"[Launcher] ⏱ {nick} no aceptó en {TIMEOUT_ACEPTACION}s — reiniciando bot...")
-                                        raise Exception("Challenge no aceptada — reiniciando")
+                                    # Sin timeout — el watchdog maneja los colgados
+                                    await bot.send_challenges(nick, 1)
+                                    print(f"[Launcher] ✓ Combate con {nick} finalizado")
 
                                     ultimo_combate["en_combate"] = False
                                     ultimo_combate["tiempo"] = time.time()
 
                             except Exception as e:
-                                if "reiniciando" in str(e):
-                                    raise
                                 print(f"[Launcher] Error procesando mensaje: {e}")
                                 ultimo_combate["en_combate"] = False
 
                 except Exception as e:
-                    if "reiniciando" in str(e):
-                        raise
                     print(f"[Launcher] Backend WS desconectado: {e}. Reconectando en 5s...")
                     await asyncio.sleep(5)
 
         async def watchdog():
+            """Reinicia el bot si lleva más de TIMEOUT_COMBATE_MIN colgado."""
             while True:
                 await asyncio.sleep(60)
                 if ultimo_combate["en_combate"]:
